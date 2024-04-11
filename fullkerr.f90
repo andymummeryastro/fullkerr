@@ -24,7 +24,6 @@ program wrapper
     read( args(3), '(f10.0)' )  fk_param(3)   !M     Msun    Black hole mass
     read( args(4), '(f10.0)' )  fk_param(4)   !mdot  Edd     Accrertion rate   
     read( args(5), '(f10.0)' )  fk_param(5)   !delta_J 
-    ! read( args(6), '(f10.0)' )  fk_param(6)   !alp 
     read( args(6), '(f10.0)' )  fk_param(6)   !f1
     read( args(7), '(f10.0)' )  fk_param(7)   !f2 
     read( args(8), '(f10.0)' )  fk_param(8)   !chi 
@@ -40,11 +39,6 @@ program wrapper
     do i = 0,ne
       ear(i) = Emin * (Emax/Emin)**(real(i)/real(ne))
     end do
-
-    ! call return_temp(fk_param, rgrid, tgrid)
-    ! do i = 1, 10000
-    !   write(103,*) rgrid(i), tgrid(i)
-    ! end do 
 
     call fullkerr(ear,ne,fk_param,ifl,photar)
     norm_full_kerr = 1/D_kpc**2.0 
@@ -128,8 +122,6 @@ program wrapper
     tgrid(1) = kT_I * (3.0 * k_es * s_isco / 8.0)**0.25
     sgrid(1) = s_isco
 
-    ! write(89, *) kT_I, cs_I, eps, s_isco, r_isco, tgrid(1) 
-
     dx = 0.00001
     dt = 0.00001
 
@@ -142,12 +134,9 @@ program wrapper
       e3 = ef(rgrid(i-1), tgrid(i-1), m, r_isco, s_isco, eps)
       e4 = ef(rgrid(i-1), tgrid(i-1)-dt, m, r_isco, s_isco, eps)
       e_dot = (e3 - e4)/dt
-
-      ! write(88, *) e1, e2, e_prime, e3, e4, e_dot
       
       p1 = pf(rgrid(i-1), tgrid(i-1), m, r_isco, s_isco, eps)
 
-      ! write(86, *) e1, p1
       
       rh1 = rhf(rgrid(i-1), tgrid(i-1), m, r_isco, s_isco, eps)
       rh2 = rhf(rgrid(i-1)-dx, tgrid(i-1), m, r_isco, s_isco, eps)
@@ -155,8 +144,6 @@ program wrapper
       rh3 = rhf(rgrid(i-1), tgrid(i-1), m, r_isco, s_isco, eps)
       rh4 = rhf(rgrid(i-1), tgrid(i-1)-dt, m, r_isco, s_isco, eps)
       rh_dot = (rh3 - rh4)/dt
-      
-      ! write(87, *) rh1, rh2, rh_prime, rh3, rh4, rh_dot
 
       the_func = (e_prime - (e1+p1)/rh1 * rh_prime)
       the_func = the_func/(e_dot - (e1+p1)/rh1 * rh_dot)
@@ -165,7 +152,6 @@ program wrapper
 
       sgrid(i) = s_isco * (r_isco/rgrid(i)) * 1/(1.0+1/eps*(-1.0 + r_isco/rgrid(i))**1.5)
 
-      ! write(90,*) rgrid(i)/rg, tgrid(i) / (3.0 * k_es * sgrid(i) / 8.0)**0.25
     end do 
 
     do i = 1, 10000
@@ -175,7 +161,6 @@ program wrapper
       tgrid(i) = tgrid(i) / (3.0 * (k_es + kffgrid(i)) * sgrid(i) / 8.0)**0.25
       tau_star_grid(i) = sgrid(i) * (3 * (k_es + kffgrid(i)) * kffgrid(i)) ** 0.5
       rgrid(i) = rgrid(i)/rg 
-      ! write (45, *) rgrid(i), kffgrid(i), tcgrid(i), rhgrid(i)
     end do
     
 
@@ -201,7 +186,7 @@ function csI(param)
     m       = dble( param(3) )                !Black hole mass (solar)
     mdot    = dble( param(4) )                !Mass accretion rate (Eddington)
     delta_j = dble( param(5) )                !ISCO stress parameter
-    alp     = 0.1!dble( param(6) )                !ISCO stress parameter
+    alp     = 0.1                             !Shakura-Sunyaev stress parameter
     ! Important note: I am defining the Eddington mass accretion rate to be
     ! \dot M_edd = L_edd/c^2 = 1.26E31/c^2 * (M_bh/M_sun) [kg/s]. 
     ! or explicitly 
@@ -256,7 +241,7 @@ function ef(r, t, M, rI, sI, eps)
   return 
 end function ef
 
-function pf(r, t, M, rI, sI, eps)!! t in keV, r in meters, M in M_sun, sI in sI (ironically), eps usual. 
+function pf(r, t, M, rI, sI, eps)
   double precision pf, r, t, M, rI, sI, eps
   pf = 2292639449788.01*t**4.0  
   pf =pf+6.4466456646132e+15*(M*rI**3.0*sI**2.0*t/(r**6.0*(1.0+1.0/eps*(-1.0 + rI/r)**1.5)**2.0) + 1.26474776863348e-7*t**8.0)**0.5 
@@ -302,10 +287,10 @@ end function rhf
       m       = dble( param(3) )                !Black hole mass (solar)
       mdot    = dble( param(4) )                !Mass accretion rate (Eddington)
       delta_j = dble( param(5) )                !ISCO stress parameter
-      alp     = 0.1!dble( param(6) )                !Stress parameter
-      f1      = dble( param(6) ) 
-      f2      = dble( param(7) ) 
-      chi     = dble( param(8) ) 
+      alp     = 0.1                             !Shakura-Sunyaev stress parameter
+      f1      = dble( param(6) )                !Colour-correction main body of disc
+      f2      = dble( param(7) )                !Colour-correction at ISCO 
+      chi     = dble( param(8) )                !Colour-correction index inside ISCO 
       ! Important note: I am defining the Eddington mass accretion rate to be
       ! \dot M_edd = L_edd/c^2 = 1.26E31/c^2 * (M_bh/M_sun) [kg/s]. 
       ! or explicitly 
@@ -330,7 +315,7 @@ end function rhf
            earc(i) = Emin * (Emax/Emin)**(real(i)/real(nec))
          end do
          !Assign impossible initial values to previous parameters
-         ! Note that only impossible parameter is now cos(inc). 
+         !Note that only impossible parameter is now cos(inc). 
          aprev   = 10.d0
          mu0prev = 10.d0
       end if
@@ -388,7 +373,7 @@ end function rhf
                 kT = kT_fk(re,a,Ca,Cb,Cg,xa,xb,xg,j0,xI,Tscale,mdot,m,delta_j,cs_I)
                 !Calculate colour-temperature
                 T0 = kT / 8.6173E-8 
-                fc = f1!fcol_DEA(T0, re, a, m, mdot)
+                fc = f1
                 kTcol = kT * fc
 
               end if 
@@ -482,20 +467,10 @@ function kT_fk(re,a,Ca,Cb,Cg,xa,xb,xg,j0,xI,Tscale,mdot,m,delta_j,cs_I)
     x    = sqrt(re)
     rI   = xI**2.0
 
-    if (x .ge. xI ) then   
-      br1 = dble((1.0 - (3.0*a)/(2.0*x)*log(x) + Ca/x*log(x-xa) + Cb/x*log(x-xb) + Cg/x*log(x-xg) - (1-delta_j)*j0*xI/x)**0.25)
-      br2 = dble( (1.0/(1.0 - 3.0/(x**2) + 2.0*a/(x**3)))**0.25 )
-      kT_fk = Tscale * (mdot**0.25) / (m**0.5) * re**(-0.75) * br1 * br2
-    else
-      br1 = dble((1.0 - (3.0*a)/(2.0*xI)*log(xI) + Ca/xI*log(xI-xa) + Cb/xI*log(xI-xb) + Cg/xI*log(xI-xg) - (1-delta_j)*j0)**0.25)
-      br2 = dble( (1.0/(1.0 - 3.0/(xI**2) + 2.0*a/(xI**3)))**0.25 )
-      kT_I = Tscale * (mdot**0.25) / (m**0.5) * xI**(-1.5) * br1 * br2
-      eps_inv = 1/(0.1**0.5 * cs_I * (3.0/2.0)**0.5 * xI)
-      kT_fk = kT_I * (rI/re)**(17.0/28.0) * (eps_inv * ((rI/re) - 1)**1.5 + 1.0)**(-1.0/28.0)
-      ! kT_fk = kT_I * (rI/re)**(5.0/4.0) * (eps_inv * ((rI/re) - 1)**1.5 + 1.0)**(-1.0/4.0)
-      ! write(98, *) cs_I
-    end if 
-  
+
+    br1 = dble((1.0 - (3.0*a)/(2.0*x)*log(x) + Ca/x*log(x-xa) + Cb/x*log(x-xb) + Cg/x*log(x-xg) - (1-delta_j)*j0*xI/x)**0.25)
+    br2 = dble( (1.0/(1.0 - 3.0/(x**2) + 2.0*a/(x**3)))**0.25 )
+    kT_fk = Tscale * (mdot**0.25) / (m**0.5) * re**(-0.75) * br1 * br2  
 
     return
   end function kT_fk  
@@ -850,72 +825,7 @@ function mybbody(kT,E,dE)
 end function mybbody
 !-----------------------------------------------------------------------
 
-!-----------------------------------------------------------------------
-function fcol(T)
-! fcol = colour-temperature correction
-! T    = true temperature in keV
-! Done et al. 2012 model
-  implicit none
-  double precision fcol,T
-  if( T .lt. 2.585d-3 )then
-      fcol = 1.d0
-  else if( T .lt. 8.617e-3 )then
-      fcol = ( T / 2.585d-3 )**0.833
-  else
-      fcol = ( 72.d0 / T )**(1.d0/9.d0)
-  end if
-  return
-end function fcol
-!-----------------------------------------------------------------------
 
-!-----------------------------------------------------------------------
-function fcol_DEA(T, r, a, m, mdot)
-! fcol = colour-temperature correction
-! T    = true temperature in keV
-! Davis and El-Abd model
-  implicit none
-  double precision fcol_dea, T, r, a, AAAA
-  double precision zeta, wrp, k_es, kb, alp, O_sb, mu, mp , m0
-  double precision u0, omega_prime, G, rg, ur, m, sigma, pi, mdot, Q, Rz, up, u_0
-
-  pi  = acos(-1.d0)
-
-  G = 6.67e-11
-  rg = G * m * 2e30 / 3e8**2.0
-  O_sb = 5.67e-8 
-
-  alp = 0.1 
-  k_es = 0.034
-  mu = 0.67 
-  mp = 1.67e-27 
-  kb = 1.38e-23 
-
-  u0 = (1 + a* r**(-1.5))/(1 - 3./r + 2.*a*r**(-1.5))**0.5 
-  omega_prime = 3./2. * (G*m*2e30/rg**5)**0.5 * r**(-2.5) / ((1 + a*r**(-1.5))**2.0)
-
-  AAAA = 3 * k_es * kb**4.0 * alp ** 4.0 / (16.0 * O_sb * (mu * mp)**4.0 )
-  
-  zeta = 2 * O_sb * T**4.0 * r * rg / (u0**2.0 * omega_prime)
-  Wrp = (A * r**2.0 * rg**2.0 * u0**3.0 * zeta ** 2.0 * omega_prime)**0.2
-
-  ur =  (Wrp * r * rg) / (zeta * u0)
-
-  sigma = mdot * 1e15 / (2 * pi * r * rg * ur)
-  m0 = 0.5 * 0.1 * sigma
-
-  up =  (r)**0.5 * (1 + a**2.0/r**2.0 - 2.0*a*r**(-1.5))/(1 - 3./r + 2.*a*r**(-1.5))**0.5
-  u_0 =  - (1 - 2./r+ a * r**(-1.5))/(1 - 3./r + 2.*a*r**(-1.5))**0.5
-
-  Rz = (up**2.0 + a**2.0 * (1 - u_0**2.0))/(r)
-
-  Q = G * m * 2e30 / (r * rg)**3.0 * Rz
-
-  fcol_DEA = 1.74 + 1.06 * (log10(T) - 7.0) - 0.14 * (log10(Q) - 7.0) - 0.07 * (log10(m0) - 5.0)
-  
-  return
-end function fcol_DEA
-!-----------------------------------------------------------------------
-  
 
 !-----------------------------------------------------------------------
 function rfunc(a,mu0)
