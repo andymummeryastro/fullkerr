@@ -5,7 +5,7 @@ The fullkerr XSPEC module: continuum emission from within the ISCO
 See the pdf file README_fullkerr for more detailed instructions. (in prep.)
 
 ## Paper
-This repository contains the XSPEC model that was developed in [Mummery et al. 2024](). 
+This repository contains the XSPEC model that was developed in [Mummery et al. 2024](https://academic.oup.com/mnras/article/531/1/366/7671518). 
 
 Please cite this paper if you use this model. 
 
